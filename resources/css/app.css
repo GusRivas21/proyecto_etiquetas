@@ -1,12 +1,8 @@
 @import 'tailwindcss';
 
 @media print {
-    body * { visibility: hidden !important; }
-    table, table * { visibility: visible !important; }
     table { position: absolute; inset: 0; width: 100%; }
-    tbody tr { display: none !important; }
-    tbody tr.print-target { display: table-row !important; }
-    th:first-child, td:first-child, th:last-child, td:last-child { display: none !important; }
+    td img { width: 80px; height: 80px; }
 }
 
 @plugin 'tailwindcss-animate';

@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class LabelRecordController extends Controller
 {
@@ -30,7 +31,13 @@ class LabelRecordController extends Controller
             })
             ->when($filters['from'] ?? null, fn ($query, $from) => $query->whereDate('label_date', '>=', $from))
             ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereDate('label_date', '<=', $to))
-            ->orderByDesc('label_date')->orderByDesc('id')->get();
+            ->orderByDesc('label_date')->orderByDesc('id')->get()
+            ->map(fn (LabelRecord $record) => [
+                ...$record->toArray(),
+                'qr_code' => filled($record->code)
+                    ? 'data:image/svg+xml;base64,'.base64_encode(QrCode::format('svg')->size(120)->generate($record->code))
+                    : null,
+            ]);
 
         return Inertia::render('labels/index', [
             'records' => $records,
