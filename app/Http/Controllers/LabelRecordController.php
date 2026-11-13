@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Picqer\Barcode\BarcodeGeneratorSVG;
 
 class LabelRecordController extends Controller
 {
@@ -26,18 +27,33 @@ class LabelRecordController extends Controller
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
                         ->orWhere('code', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('npe', 'like', "%{$search}%")
+                        ->orWhere('terms', 'like', "%{$search}%");
                 });
             })
-            ->when($filters['from'] ?? null, fn ($query, $from) => $query->whereDate('label_date', '>=', $from))
-            ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereDate('label_date', '<=', $to))
-            ->orderByDesc('label_date')->orderByDesc('id')->get()
-            ->map(fn (LabelRecord $record) => [
+            ->when($filters['from'] ?? null, fn ($query, $from) => $query->whereDate('due_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereDate('due_date', '<=', $to))
+            ->orderBy('due_date')->orderByDesc('id')->get()
+            ->map(function (LabelRecord $record) {
+                $barcode = null;
+                if (filled($record->code)) {
+                    try {
+                        $barcode = 'data:image/svg+xml;base64,'.base64_encode(
+                            (new BarcodeGeneratorSVG())->getBarcode($record->code, BarcodeGeneratorSVG::TYPE_CODE_128, 1.5, 36)
+                        );
+                    } catch (\InvalidArgumentException) {
+                        // El código puede contener datos que Code 128 no acepta; el QR sigue disponible.
+                    }
+                }
+
+                return [
                 ...$record->toArray(),
                 'qr_code' => filled($record->code)
                     ? 'data:image/svg+xml;base64,'.base64_encode(QrCode::format('svg')->size(120)->generate($record->code))
                     : null,
-            ]);
+                'barcode' => $barcode,
+                ];
+            });
 
         return Inertia::render('labels/index', [
             'records' => $records,
@@ -48,10 +64,13 @@ class LabelRecordController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'code' => ['nullable', 'string', 'max:100'],
+            'code' => ['required', 'string', 'max:80', 'regex:/^[\x20-\x7E]+$/'],
             'name' => ['required', 'string', 'max:160'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'label_date' => ['required', 'date'],
+            'credit_amount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'due_date' => ['nullable', 'date'],
+            'npe' => ['nullable', 'string', 'max:100'],
+            'installment_amount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'terms' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $request->user()->labelRecords()->create($data);
