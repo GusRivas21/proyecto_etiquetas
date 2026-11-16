@@ -27,39 +27,39 @@ function PrintSheet({ records, columns, rows }: { records: LabelRecord[]; column
         <style>{`
             @media screen { .print-sheet { display:none } }
             @media print {
-                @page { size: letter portrait; margin: .28in }
+                @page { size: letter landscape; margin: .28in }
                 html, body { margin:0!important; padding:0!important; background:#fff!important }
                 body > *:not(.print-sheet) { display:none!important }
                 .print-sheet { display:block!important; color:#000; font-family:Arial,Helvetica,sans-serif }
-                .print-page { width:7.94in; height:10.44in; display:grid; gap:.06in; break-after:page; page-break-after:always }
+                .print-page { box-sizing:border-box; width:10.44in; height:7.94in; display:grid; grid-auto-flow:row; align-content:start; justify-content:start; gap:.06in; break-after:page; page-break-after:always }
                 .print-page:last-child { break-after:auto; page-break-after:auto }
 
                 .print-label {
-                    box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between;
-                    gap:.03in; padding:.06in .09in; border:1px dashed #999; overflow:hidden; break-inside:avoid; min-height:0;
+                    box-sizing:border-box; width:7.6cm; height:5.8cm; display:flex; flex-direction:column; justify-content:space-between;
+                    gap:.02in; padding:.05in .07in; border:1px dashed #999; overflow:hidden; break-inside:avoid; min-height:0;
                 }
                 .print-label > * { flex:none; min-width:0 }
 
-                .print-codeline, .print-npe { display:flex; align-items:center; gap:.06in; font-size:8pt; height:.18in }
-                .print-box { flex:1; box-sizing:border-box; height:.18in; line-height:.16in; border:1px solid #000; padding:0 .05in; font-size:8pt; overflow:hidden; white-space:nowrap; text-overflow:ellipsis }
+                .print-codeline, .print-npe { display:flex; align-items:center; gap:.06in; font-size:8pt; height:.16in }
+                .print-box { flex:1; box-sizing:border-box; height:.16in; line-height:.14in; border:1px solid #000; padding:0 .05in; font-size:8pt; overflow:hidden; white-space:nowrap; text-overflow:ellipsis }
                 .print-npe b { font-size:9pt }
 
-                .print-barcode { display:block; width:100%; height:.3in; object-fit:fill }
+                .print-barcode { display:block; width:100%; height:.25in; object-fit:fill }
 
                 /* Fila central: altura FIJA para que nada se monte sobre otra fila */
-                .print-main { display:grid; grid-template-columns:.8in 1fr .72in; gap:.08in; height:.74in; overflow:hidden }
-                .print-brand { box-sizing:border-box; height:.74in; border:1px solid #888; background:#e5e5e5; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#666; text-align:center; overflow:hidden }
+                .print-main { display:grid; grid-template-columns:.8in 1fr .62in; gap:.06in; height:.66in; overflow:hidden }
+                .print-brand { box-sizing:border-box; height:.66in; border:1px solid #888; background:#e5e5e5; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#666; text-align:center; overflow:hidden }
                 .print-brand img { max-width:100%; max-height:100%; object-fit:contain }
                 .print-copy { min-width:0; display:flex; flex-direction:column; gap:.025in; overflow:hidden }
                 .print-name { font-size:11pt; font-weight:bold; font-style:italic; line-height:1.1; border-bottom:1px solid #000; padding-bottom:.01in; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-                .print-field { border:1px solid #000; padding:0 .05in; font-size:8pt; line-height:.2in; height:.2in; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-                .print-qr { width:.72in; height:.72in; object-fit:contain; display:block }
+                .print-field { box-sizing:border-box; flex:none; border:1px solid #000; padding:0 .04in; font-size:6.2pt; line-height:.16in; height:.18in; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+                .print-qr { width:.66in; height:.66in; object-fit:contain; display:block }
 
-                .print-string { box-sizing:border-box; height:.17in; line-height:.15in; border:1px solid #000; padding:0 .05in; font-size:7pt; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-                .print-terms { box-sizing:border-box; border:1px solid #000; padding:.01in .05in; font-size:5.5pt; line-height:1.15; height:.27in; overflow:hidden }
+                .print-string { box-sizing:border-box; height:.14in; line-height:.12in; border:1px solid #000; padding:0 .05in; font-size:7pt; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+                .print-terms { box-sizing:border-box; border:1px solid #000; padding:.01in .05in; font-size:5.5pt; line-height:1.15; height:.23in; overflow:hidden }
             }
         `}</style>
-        {chunk(records, columns * rows).map((page, index) => <div key={index} className="print-page" style={{ gridTemplateColumns: `repeat(${columns},1fr)`, gridTemplateRows: `repeat(${rows},1fr)` }}>
+        {chunk(records, columns * rows).map((page, index) => <div key={index} className="print-page" style={{ gridTemplateColumns: `repeat(${columns}, 7.6cm)`, gridTemplateRows: `repeat(${rows}, 5.8cm)` }}>
             {page.map(record => <article key={record.id} className="print-label">
                 <div className="print-codeline"><span>Código:</span><span className="print-box">{record.code}</span></div>
                 {record.barcode && <img className="print-barcode" src={record.barcode} alt={`Código de barras ${record.code}`} />}
@@ -89,7 +89,7 @@ export default function LabelsIndex({ records, filters }: { records: LabelRecord
     const [query, setQuery] = useState(filters);
     const [printIds, setPrintIds] = useState<number[]>([]);
     const [columns, setColumns] = useState(2);
-    const [rows, setRows] = useState(4);
+    const [rows, setRows] = useState(3);
     const form = useForm({ code: '', name: '', credit_amount: '', due_date: '', npe: '', installment_amount: '', terms: '' });
     const selectedRecords = records.filter(record => printIds.includes(record.id));
 
@@ -121,13 +121,14 @@ export default function LabelsIndex({ records, filters }: { records: LabelRecord
                 <div><h1 className="text-2xl font-semibold">Etiquetas de crédito</h1><p className="text-muted-foreground mt-1 text-sm">Registra créditos, consulta los pagos e imprime etiquetas con QR y código de barras.</p></div>
                 <div className="flex flex-wrap items-end gap-2">
                     <label className="text-xs">Columnas<input type="number" min={1} max={3} className="mt-1 block w-16 rounded border px-2 py-2 text-sm" value={columns} onChange={e => setColumns(Math.min(3, Math.max(1, Number(e.target.value) || 1)))} /></label>
-                    <label className="text-xs">Filas<input type="number" min={1} max={8} className="mt-1 block w-16 rounded border px-2 py-2 text-sm" value={rows} onChange={e => setRows(Math.min(8, Math.max(1, Number(e.target.value) || 1)))} /></label>
+                    <label className="text-xs">Filas<input type="number" min={1} max={3} className="mt-1 block w-16 rounded border px-2 py-2 text-sm" value={rows} onChange={e => setRows(Math.min(3, Math.max(1, Number(e.target.value) || 1)))} /></label>
                     <button className="rounded border px-3 py-2 text-sm disabled:opacity-50" disabled={!selected.length} onClick={() => printRecords(selected)}>Imprimir seleccionadas ({selected.length})</button>
                     <button className="rounded border px-3 py-2 text-sm disabled:opacity-50" disabled={!records.length} onClick={() => printRecords(records.map(r => r.id))}>Imprimir lista</button>
                     <button className="rounded border border-red-300 px-3 py-2 text-sm text-red-700 disabled:opacity-50" disabled={!records.length} onClick={() => { if (window.confirm('¿Eliminar todos los registros de tu lista?')) router.delete('/labels'); }}>Eliminar lista</button>
                 </div>
             </header>
 
+            <p className="text-muted-foreground -mt-4 text-xs">Formato de impresión: hoja carta horizontal; cada etiqueta mide 7.6 × 5.8 cm aunque imprimas una sola.</p>
             <section className="rounded-lg border p-4">
                 <h2 className="mb-3 font-medium">Nuevo registro de crédito</h2>
                 <form onSubmit={submitRecord} className="grid gap-3 md:grid-cols-3">
